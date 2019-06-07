@@ -14,6 +14,7 @@ from datetime import datetime
 import time
 
 currentSize = 0 #of CIMIS data
+beginningHour = 0
 maxLines = 100
 data = []
 avgET = 0.0
@@ -35,6 +36,11 @@ class dataNode:
 		self.ET       = ET
 
 def Update( localTemp, localHumidity ):
+	month = int(datetime.today().strftime('%m'))
+	day   = int(datetime.today().strftime('%d'))
+	year  = int(datetime.today().strftime('%Y'))
+	date  = str(month) + '/' + str(day) + '/' + str(year)
+	print date
 	global currentSize
 	averageTemp = localTemp / 60.0
 	averageHumidity = localHumidity / 60.0
@@ -48,6 +54,9 @@ def Update( localTemp, localHumidity ):
 	with open("hourly075.csv", "rt") as file:
 		for line in file:
 			info = line.split(",")
+			if info[1] != date:
+				continue
+
 			#stop reading the file either when we have caught up to the specified hours or when we have reaced end of CIMIS file
 			if count >= hours or info[4] == "--":
 				break
@@ -64,21 +73,21 @@ def Update( localTemp, localHumidity ):
 			print "humidity: " + str(humidity)
 
 			#If a new entry has info, we can use that to calculate the ET
-			if count > currentSize:
-				index = count - currentSize - 1
+			if count > (currentSize-beginningHour):
+				index = count - (currentSize-beginningHour)-1
 				ET = data[index].ETo * float(data[index].temp/temp) * float(humidity)/float(data[index].humidity)
 				data.pop(index)
 				sum += ET
 
-			#CurrentSize holds the length of what the CIMIS data is/was supposed to be,
-			#so if count > currentSize, this means new data has been added to CIMIS file.
-			if(currentSize < count):
-				#Calculate average ET.
-				avgET = float(sum/(count-currentSize))
-				print "========= Average: %f" %(avgET)
-				print "========= Hours calc'ed for: %d" %(count-currentSize)
-				print "========= Size of local: %d" %(len(data))
-				currentSize = count
+	#CurrentSize holds the length of what the CIMIS data is/was supposed to be,
+	#so if count > currentSize, this means new data has been added to CIMIS file.
+	if(currentSize < count+beginningHour):
+		#Calculate average ET.
+		avgET = float(sum/(count+beginningHour-currentSize))
+		print "========= Average: %f" %(avgET)
+		print "========= Hours calc'ed for: %d" %(count+beginningHour-currentSize)
+		print "========= Size of local: %d" %(len(data))
+		currentSize = count + beginningHour
 
 def loop():
 	global currentSize
@@ -88,7 +97,7 @@ def loop():
 	localHumidity = 0
 	minutes = 0
 
-	while(currentSize < 10):
+	while(currentSize < 24):
 		now = realTime.now() #Get the Current real time and convert to minutes
 		currentMinutes = int(now.strftime("%S"))
 		if currentMinutes != minutes: #Check if the minute changed and update the counter if necessary
@@ -106,7 +115,10 @@ def loop():
 
 if __name__=='__main__':
 	print('Program is starting')
-
+	global currentSize
+	global beginningHour
+	currentSize = int(datetime.today().strftime('%H'))
+	beginningHour = currentSize
 
 	try:
 		loop()
