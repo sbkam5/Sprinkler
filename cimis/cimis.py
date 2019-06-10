@@ -38,7 +38,7 @@ import datetime
 import dateutil
 import json
 import pandas as pd
-import urllib2
+import urllib as urllib2
 
     
 def write_output_file(xls_path, cimis_data, site_names):
