@@ -13,13 +13,14 @@
 from datetime import datetime
 import time
 
-currentSize = 0 #of CIMIS data
+currentHour = 0 #the most recent non-empty hour of CIMIS data
 beginningHour = 0
 maxLines = 100
 data = []
 avgET = 0.0
 realTime = datetime.now()
 hours = 0
+date = "date" #this global string holds the current date
 
 """
 	Data structure responsible for keeping track of the ET, local temp and
@@ -36,16 +37,13 @@ class dataNode:
 		self.ET       = ET
 
 def Update( localTemp, localHumidity ):
-	month = int(datetime.today().strftime('%m'))
-	day   = int(datetime.today().strftime('%d'))
-	year  = int(datetime.today().strftime('%Y'))
-	date  = str(month) + '/' + str(day) + '/' + str(year)
-	print date
-	global currentSize
-	averageTemp = localTemp / 60.0
+	global date
+	global currentHour
+	averageTemp = localTemp / 60.0    #once update is called, average the locally collected data
 	averageHumidity = localHumidity / 60.0
 	newNode = dataNode( 100, 0.01, averageTemp, averageHumidity )
 	data.append(newNode)
+	found = 0 #This is a variable that turns to 1 once the first element of the date of interest is found.
 
 	print("Currently Updating\n")
 	count = 0
@@ -54,12 +52,13 @@ def Update( localTemp, localHumidity ):
 	with open("hourly075.csv", "rt") as file: #Open CVS CIMIS File
 		for line in file:
 			info = line.split(",")
-			if info[1] != date: #Check if the date in the info "Field [1]: Date" matches
-				continue		#the current date. If not, continue searching file
+			if info[1] != date and found == 0:  #Skip through lines in file till you get to date of interest.  Once found, found = 1.
+				continue
+			else:
+				found = 1
 
-			#stop reading the file either when we have caught up to the specified hours
-			#or when we have reached end of CIMIS file
-			if count >= hours or info[4] == "--":
+			#stop reading the file either when we have caught up to the specified hours or when we have reaced end of CIMIS file
+			if count >= (hours+beginningHour) or info[4] == "--":
 				break
 
 			CimisTime     = int(info[2])
@@ -74,52 +73,81 @@ def Update( localTemp, localHumidity ):
 			print "humidity: " + str(humidity)
 
 			#If a new entry has info, we can use that to calculate the ET
-			if count > (currentSize-beginningHour):
-				index = count - (currentSize-beginningHour) - 1
+			if count > currentHour:
+				index = count - currentHour-1
 				ET = data[index].ETo * float(data[index].temp/temp) * float(humidity)/float(data[index].humidity)
 				data.pop(index)
 				sum += ET
 
 	#CurrentSize holds the length of what the CIMIS data is/was supposed to be,
 	#so if count > currentSize, this means new data has been added to CIMIS file.
-	if(currentSize < count+beginningHour):
+	if(currentHour < count):
 		#Calculate average ET.
-		avgET = float(sum/(count+beginningHour-currentSize))
+		avgET = float(sum/(count-currentHour))
 		print "========= Average: %f" %(avgET)
-		print "========= Hours calc'ed for: %d" %(count+beginningHour-currentSize)
+		print "========= Hours calc'ed for: %d" %(count-currentHour)
 		print "========= Size of local: %d" %(len(data))
-		currentSize = count + beginningHour
+		currentHour = count
 
 def loop():
-	global currentSize
+	global currentHour
+	global beginningHour
 	global realTime
 	global hours
+	global date
+	#Before actual looping starts, get current date to help with reading the file for later
+	month = int(datetime.today().strftime('%m'))
+	day   = int(datetime.today().strftime('%d'))
+	year  = int(datetime.today().strftime('%Y'))
+	date  = str(month) + '/' + str(day) + '/' + str(year)
+	print date
+
+
 	localTemp = 0.0
 	localHumidity = 0
 	minutes = 0
+	t1 = int(datetime.today().strftime('%S'))  #t1 and t2 are simply timestamps that help program know when a minute has passed
+	t2 = t1
 
-	while(currentSize < 24):
+	while(hours < 24):
 		now = realTime.now() #Get the Current real time and convert to minutes
-		currentMinutes = int(now.strftime("%S"))
-		if currentMinutes != minutes: #Check if the minute changed and update the counter if necessary
+		t2 = int(datetime.today().strftime('%S'))
+		if t1 != t2: #Check if the minute changed and update the counter if necessary.  t1 != t2 if a minute has passed.
+			t1 = t2
 			minutes += 1
+			#print "minutes: " + str(minutes)
 			localTemp += 70.0 #Static Testing Values
 			localHumidity += 70 #Static Testing Values
 
-		if minutes == 60: #If the minute tracker has reached 60 (an hour) -> update
+		if minutes >= 60: #If the minute tracker has reached 60 (an hour) -> update
 			hours += 1
 			minutes = 0
 			Update( localTemp, localHumidity ) #Run calculations and Update CIMIS
+
+		#if hours becomes >= 24, reset it, currentHour, beginningHour, and date after updating LCD and calling update.
+		if hours >= 24:
+			print "====== Reseting ======"
+			hours = 0
+			month = int(datetime.today().strftime('%m'))
+			day   = int(datetime.today().strftime('%d'))
+			year  = int(datetime.today().strftime('%Y'))
+			date  = str(month) + '/' + str(day) + '/' + str(year)
+			print date
+			currentHour = int(datetime.today().strftime('%H'))
+			beginningHour = currentHour
 
 		#wait another hour to check
 
 
 if __name__=='__main__':
 	print('Program is starting')
-	global currentSize
+	global currentHour
 	global beginningHour
-	currentSize = int(datetime.today().strftime('%H'))
-	beginningHour = currentSize
+	currentHour = int(datetime.today().strftime('%H'))
+	beginningHour = currentHour
+	"""
+		This is where we shall start the thread for the LCD.
+	"""
 
 	try:
 		loop()
