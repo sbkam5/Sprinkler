@@ -51,13 +51,14 @@ def Update( localTemp, localHumidity ):
 	count = 0
 	sum = 0.0
 
-	with open("hourly075.csv", "rt") as file:
+	with open("hourly075.csv", "rt") as file: #Open CVS CIMIS File
 		for line in file:
 			info = line.split(",")
-			if info[1] != date:
-				continue
+			if info[1] != date: #Check if the date in the info "Field [1]: Date" matches
+				continue		#the current date. If not, continue searching file
 
-			#stop reading the file either when we have caught up to the specified hours or when we have reaced end of CIMIS file
+			#stop reading the file either when we have caught up to the specified hours
+			#or when we have reached end of CIMIS file
 			if count >= hours or info[4] == "--":
 				break
 
@@ -74,7 +75,7 @@ def Update( localTemp, localHumidity ):
 
 			#If a new entry has info, we can use that to calculate the ET
 			if count > (currentSize-beginningHour):
-				index = count - (currentSize-beginningHour)-1
+				index = count - (currentSize-beginningHour) - 1
 				ET = data[index].ETo * float(data[index].temp/temp) * float(humidity)/float(data[index].humidity)
 				data.pop(index)
 				sum += ET

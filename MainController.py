@@ -13,13 +13,14 @@ from datetime import datetime
 import time as clock
 import final as Final
 import threading as t
+from lcd import LCDprint
 
 #functionality for the timer.
 timer_finished = True #Determines whether timer is running
 seconds = 0.5 #Predetermined wait time for the timer
 motion_sensor_detect = False #Bool to determine if someone is present
 current_time = datetime.now()
-stall = True
+timer_wait = True
 
 #Threading Function for the Timer
 def Timer ():
@@ -33,7 +34,7 @@ def Timer ():
         print("Timer Start")
         clock.sleep(seconds) #Timer is Running
         timer_finished = True
-        while ( stall ): #Wait for Signal from Main Controller to reset timer
+        while ( timer_wait ): #Wait for Signal from Main Controller to reset timer
             continue
 
 def Minute_Reset():
@@ -74,11 +75,13 @@ def Controller():
 
             if ( minute_counter == 0 ): #If time reaches an hour, update values
                 print("Hour Complete: Updating and Reseting")
-                Final.Update(10, 15) #Call the Update Function
+                ET, averageTemp, averageHumidity = Final.Update(10, 15) #Call the Update Function
                 minute_counter = Minute_Reset() #Reset the amount of minutes left for an hour
                 hours = hours + 1
+                LCDprint( str(realTime.now()) + "\nET: " + str(ET) + "Average Temperature: " + str(averageTemp) +
+                            "*C averageHumidity: " + str(averageHumidity))
 
-            stall = False #Signal the Timer thread to restart
+            timer_wait = False #Signal the Timer thread to restart
 
         elif ( motion_sensor_detect ): #Motion Sensor detected movement
             print("Some dumbass walked into the path. Probably Spencer")
