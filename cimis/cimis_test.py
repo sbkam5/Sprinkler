@@ -7,13 +7,15 @@ def main():
     xls_path = 'CIMIS_query.xlsx' # TODO: make this dep on stations/query date
 
     interval ='hourly' #options are:    default, daily, hourly
-    start = '03-01-2017' #self-explanatory
-    end = '03-02-2017' #self-explanatory
+    start = '06-09-2019' #self-explanatory
+    end = '06-10-2019' #self-explanatory
 
     site_names, cimis_data = run_query(appKey, sites, interval,
                                        start=start, end=end)
 
-    print(site_names, cimis_data)
+    write_output_file(xls_path, cimis_data, site_names)
+
+    # print(site_names, cimis_data)
 
 
 if __name__ == "__main__":
