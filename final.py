@@ -12,6 +12,9 @@
 
 from datetime import datetime
 import time
+from lcd import lcd_start
+from lcd import LCDprint
+import threading
 
 currentHour = 0 #the most recent non-empty hour of CIMIS data
 beginningHour = 0
@@ -52,8 +55,8 @@ def Update( localTemp, localHumidity ):
 	with open("hourly075.csv", "rt") as file: #Open CVS CIMIS File
 		for line in file:
 			info = line.split(",")
-			if info[1] != date and found == 0:  #Skip through lines in file till you get to date of interest.  Once found, found = 1.
-				continue
+			if info[1] != date and found == 0:  #Skip through lines in file till you get to date of interest.
+				continue						#Once found, found = 1.
 			else:
 				found = 1
 
@@ -74,7 +77,7 @@ def Update( localTemp, localHumidity ):
 
 			#If a new entry has info, we can use that to calculate the ET
 			if count > currentHour:
-				index = count - currentHour-1
+				index = count - currentHour - 1
 				ET = data[index].ETo * float(data[index].temp/temp) * float(humidity)/float(data[index].humidity)
 				data.pop(index)
 				sum += ET
@@ -89,6 +92,8 @@ def Update( localTemp, localHumidity ):
 		print "========= Size of local: %d" %(len(data))
 		currentHour = count
 
+	return averageTemp, averageHumidity
+
 def loop():
 	global currentHour
 	global beginningHour
@@ -101,7 +106,6 @@ def loop():
 	year  = int(datetime.today().strftime('%Y'))
 	date  = str(month) + '/' + str(day) + '/' + str(year)
 	print date
-
 
 	localTemp = 0.0
 	localHumidity = 0
@@ -122,7 +126,8 @@ def loop():
 		if minutes >= 60: #If the minute tracker has reached 60 (an hour) -> update
 			hours += 1
 			minutes = 0
-			Update( localTemp, localHumidity ) #Run calculations and Update CIMIS
+			AvgTemp, AvgHum = Update( localTemp, localHumidity ) #Run calculations and Update CIMIS
+			#LCDprint(str(AvgTemp + AvgHum))
 
 		#if hours becomes >= 24, reset it, currentHour, beginningHour, and date after updating LCD and calling update.
 		if hours >= 24:
@@ -140,6 +145,7 @@ def loop():
 
 
 if __name__=='__main__':
+
 	print('Program is starting')
 	global currentHour
 	global beginningHour
@@ -148,6 +154,12 @@ if __name__=='__main__':
 	"""
 		This is where we shall start the thread for the LCD.
 	"""
+	LCD_thread = threading.Thread(target=lcd_start)
+	LCD_thread.daemon = True
+	LCD_thread.start()
+#	Relay_Thread = Threading.Thread(target=relay_start)
+#	Relay_Thread.daemon = True
+#	Relay_Thread.start()
 
 	try:
 		loop()

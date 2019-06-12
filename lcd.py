@@ -38,19 +38,25 @@ def LCDprint(str1, str2):
 def destroy():
     lcd.clear()
 
-PCF8574_address = 0x27 #I2C address of PCF8574
-PCF8574A_address = 0x3F #I2C address of PCF8574A
+def lcd_start():
+    PCF8574_address = 0x27 #I2C address of PCF8574
+    PCF8574A_address = 0x3F #I2C address of PCF8574A
 
-try:
-    mcp = PCF8574_GPIO(PCF8574_address)
-except:
     try:
-        mcp = PCF8574_GPIO(PCF8574A_address)
+        mcp = PCF8574_GPIO(PCF8574_address)
     except:
-        print("I2C Address Error !")
-        exit(1)
+        try:
+            mcp = PCF8574_GPIO(PCF8574A_address)
+        except:
+            print("I2C Address Error !")
+            exit(1)
 #create LCD, passing in MCP GPIO adapter
-lcd = Adafruit_CharLCD(pin_rs=0, pin_e=2, pins_db=[4,5,6,7], GPIO=mcp)
+    lcd = Adafruit_CharLCD(pin_rs=0, pin_e=2, pins_db=[4,5,6,7], GPIO=mcp)
+    try:
+        LCDprint(title + '\n',string)
+    except KeyboardInterrupt:
+        destroy()
+
 if __name__ == '__main__':
     print('BRUH')
     try:
