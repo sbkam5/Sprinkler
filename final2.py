@@ -14,16 +14,18 @@ from datetime import datetime
 import time
 from time import sleep
 import threading
-import head
-from test import lcd_thread
+import lcd_multithread
+import math
 
-head.localTemp = 0.0
-head.localHum  = 0
-head.localET   = 0.0
-head.cimisTemp = 0.0
-head.cimisHum  = 0
-head.cimisET   = 0.0
-head.r = True
+localTemp = 0.0
+localHum  = 0
+localET   = 0.0
+cimisTemp = 0.0
+cimisHum  = 0
+cimisET   = 0.0
+r = True
+savedWater = True
+waterSaved = 0.0
 
 currentHour = 0 #the most recent non-empty hour of CIMIS data
 beginningHour = 0
@@ -51,9 +53,11 @@ class dataNode:
 def Update( lTemp, lHumidity, lET ):
 	global date
 	global currentHour
-	#global head.cimisTemp
-	#global head.cimisHum
-	#global head.cimisET
+	global cimisTemp
+	global cimisHum
+	global cimisET
+	global savedWater
+	global waterSaved
 
 	averageTemp = lTemp / 60.0    #once update is called, average the locally collected data
 	averageHumidity = lHumidity / 60.0
@@ -110,10 +114,19 @@ def Update( lTemp, lHumidity, lET ):
 		print "========= Average: %f" %(avgET)
 		print "========= Hours calc'ed for: %d" %(count-currentHour)
 		print "========= Size of local: %d" %(len(data))
-		head.cimisTemp = tempTemp
-		head.cimisHum  = tempHumidity
-		head.cimisET   = tempET
+		cimisTemp = tempTemp
+		cimisHum  = tempHumidity
+		cimisET   = tempET
 		currentHour = count
+		#Calulate timing
+		calculatedWater = ((avgET * 1 * 200 * 0.62)/0.75)/24
+		cimisWater      = ((cimisET *1* 200 * 0.62)/0.75)/24
+		if(cimisWater < calculatedWater):
+			savedWater = False
+		else:
+			savedWater = True
+		waterSaved = math.abs(cimisWater - calculatedWater)
+		calculatedTime = calculatedWater/1020 * 60 * 60
 	else:
 		print "========= No data to report"
 		cimisTemp = 0.0
@@ -126,9 +139,9 @@ def loop():
 	global realTime
 	global hours
 	global date
-	#global head.localTemp
-	#global head.localHum
-	#global head.localET
+	global localTemp
+	global localHum
+	global localET
 	#Before actual looping starts, get current date to help with reading the file for later
 	month = int(datetime.today().strftime('%m'))
 	day   = int(datetime.today().strftime('%d'))
@@ -146,6 +159,10 @@ def loop():
 
 	while(hours < 24):
 		sleep(0.01)
+		string = "localTemp: " + str(localTemp) + "Local Hum: " + str(localHum) + "LocalET: " + str(localET) + "CimisTemp: " + str(cimisTemp) + "CimisHum: " + str(cimisHum) + "CimisET: " + str(CimisET)
+		if(waterSaved):
+			string += "WaterSaved"
+		lcd_multithread.updateString(string)
 		now = realTime.now() #Get the Current real time and convert to minutes
 		t2 = int(datetime.today().strftime('%S'))
 		if t1 != t2: #Check if the minute changed and update the counter if necessary.  t1 != t2 if a minute has passed.
@@ -155,9 +172,9 @@ def loop():
 			lTemp += 70.0 #Static Testing Values
 			lHumidity += 70 #Static Testing Values
 			lET += 0.01
-			head.localTemp = 70.0
-			head.localHum = 70
-			head.localET = 0.01
+			localTemp = 70.0
+			localHum = 70
+			localET = 0.01
 
 		if minutes >= 60: #If the minute tracker has reached 60 (an hour) -> update
 			print "------------- It's been an hour ----------------"
@@ -188,7 +205,7 @@ if __name__=='__main__':
 	print('Program is starting')
 	global currentHour
 	global beginningHour
-	#global head.r
+	global r
 	currentHour = int(datetime.today().strftime('%H'))
 	beginningHour = currentHour
 	"""
@@ -196,12 +213,7 @@ if __name__=='__main__':
 	"""
 
 	try:
-		t = threading.Thread(target=lcd_thread)
-		t.daemon = True
-		t.start()
 		loop()
 	except KeyboardInterrupt:
-		head.r = False
-		t.join()
+		r = False
 		print "Exiting\n"
-	
