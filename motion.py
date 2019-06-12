@@ -1,4 +1,4 @@
-import RPi.GPIO as GPIOs
+import RPi.GPIO as GPIO
 
 ledPin = 12
 sensorPin =11
@@ -10,7 +10,7 @@ def setup():
     GPIO.setup(ledPin,GPIO.OUT)
     GPIO.setup(sensorPin, GPIO.IN)
 
-def loop(){
+def loop():
     while True:
         if GPIO.input(sensorPin)==GPIO.HIGH:
             GPIO.output(ledPin,GPIO.HIGH)
@@ -18,7 +18,7 @@ def loop(){
         else:
             GPIO.output(ledPin,GPIO.LOW)
             ispassing = False
-}
+
 
 def destroy():
     GPIO.cleanup()

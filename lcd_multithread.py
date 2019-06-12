@@ -30,8 +30,8 @@ def str_loop(l):
         buf = string[0:15]
         while True:
             #lcd.delayMicroseconds(200)
-            print ("loop:"+string)
-            print("counter",counter)
+            #print ("loop:"+string)
+            #print("counter",counter)
             lcd.clear()
             lcd.message(title+'\n')
             lcd.message(buf)
@@ -57,8 +57,8 @@ def LCDprint(s):
     mcp.output(3,1) #turn on LCD backlight
     lcd.begin(16,2) #set number of LCD lines and columns
     lcd.setCursor(0,0)
-    print("string length: ")
-    print(len(string))
+    #print("string length: ")
+    #print(len(string))
     str_loop(len(s))
 
 
@@ -79,7 +79,7 @@ except:
         exit(1)
 #create LCD, passing in MCP GPIO adapter
 lcd = Adafruit_CharLCD(pin_rs=0, pin_e=2, pins_db=[4,5,6,7], GPIO=mcp)
-
+"""
 x = threading.Thread(target=LCDprint,args=(string,))
 x.start()
 time.sleep(3)
@@ -89,3 +89,4 @@ time.sleep(5)
 print("wake up")
 updateString("MERP MERP MERP MERP MERP MERP")
 x.join()
+"""
