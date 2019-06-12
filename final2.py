@@ -17,6 +17,8 @@ import threading
 import lcd_multithread
 import math
 import dht as DHT
+import motion
+from motion import ispassing
 
 localTemp = 0.0
 localHum  = 0
@@ -170,7 +172,11 @@ def loop():
 			string += " WaterSaved: " + str(waterSaved)
 		else:
 			string += " WaterLost: " + str(waterSaved)
-		lcd_multithread.updateString(string)
+			
+		if ( ispassing ):
+			lcd_multithread.updateString("Someone is passing. Relay Shutoff")
+		else:
+			lcd_multithread.updateString(string)
 		now = realTime.now() #Get the Current real time and convert to minutes
 		t2 = int(datetime.today().strftime('%S'))
 		if t1 != t2: #Check if the minute changed and update the counter if necessary.  t1 != t2 if a minute has passed.
@@ -221,6 +227,13 @@ if __name__=='__main__':
 	"""
 
 	try:
+		x = threading.Thread(target=lcd_multithread.LCDprint,args=("Tom is stupid",))
+		x.daemon = True
+		x.start()
+		motion.setup()
+		y = threading.Thread(target = motion.loop, args=())
+		y.daemon = True
+		y.start()
 		loop()
 	except KeyboardInterrupt:
 		r = False
