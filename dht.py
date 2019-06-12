@@ -36,6 +36,7 @@ def dht_GetData():
         else:
             print("error, Getting data again...")
             time.sleep(2)
+    return dht.humidity, dht.temperature
 
 if __name__ == '__main__':
     print ('Program is starting ... ')

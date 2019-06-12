@@ -16,6 +16,7 @@ from time import sleep
 import threading
 import lcd_multithread
 import math
+import dht as DHT
 
 localTemp = 0.0
 localHum  = 0
@@ -142,13 +143,18 @@ def loop():
 	global localTemp
 	global localHum
 	global localET
+	global cimisTemp
+	global cimisHum
+	global cimisET
+	global savedWater
+	global waterSaved
+
 	#Before actual looping starts, get current date to help with reading the file for later
 	month = int(datetime.today().strftime('%m'))
 	day   = int(datetime.today().strftime('%d'))
 	year  = int(datetime.today().strftime('%Y'))
 	date  = str(month) + '/' + str(day) + '/' + str(year)
 	print date
-
 
 	lTemp = 0.0
 	lHumidity = 0
@@ -159,9 +165,11 @@ def loop():
 
 	while(hours < 24):
 		sleep(0.01)
-		string = "localTemp: " + str(localTemp) + "Local Hum: " + str(localHum) + "LocalET: " + str(localET) + "CimisTemp: " + str(cimisTemp) + "CimisHum: " + str(cimisHum) + "CimisET: " + str(CimisET)
+		string = "localTemp: " + str(localTemp) + "Local Hum: " + str(localHum) + "LocalET: " + str(localET) + "CimisTemp: " + str(cimisTemp) + "CimisHum: " + str(cimisHum) + "CimisET: " + str(cimisET)
 		if(waterSaved):
-			string += "WaterSaved"
+			string += " WaterSaved: " + str(waterSaved)
+		else:
+			string += " WaterLost: " + str(waterSaved)
 		lcd_multithread.updateString(string)
 		now = realTime.now() #Get the Current real time and convert to minutes
 		t2 = int(datetime.today().strftime('%S'))
@@ -169,12 +177,12 @@ def loop():
 			t1 = t2
 			minutes += 1
 			#print "minutes: " + str(minutes)
-			lTemp += 70.0 #Static Testing Values
-			lHumidity += 70 #Static Testing Values
 			lET += 0.01
-			localTemp = 70.0
-			localHum = 70
+			localHum, localTemp = DHT.dht_GetData()
 			localET = 0.01
+			lHumidity = lHumidity + localHum
+			lTemp = lTemp + localTemp
+			lET = + lET + localET
 
 		if minutes >= 60: #If the minute tracker has reached 60 (an hour) -> update
 			print "------------- It's been an hour ----------------"
