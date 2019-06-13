@@ -105,7 +105,7 @@ def Update( lTemp, lHumidity, lET ):
         continue
 
 			#stop reading the file either when we have caught up to the specified hours or when we have reaced end of CIMIS file
-			if count >= (hours+beginningHour) or info[4] == "--":
+			if count >= (hours+beginningHour) or info[4] == "":
 				break
 
 			ETo      = float(info[9])
