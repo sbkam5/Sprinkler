@@ -37,6 +37,8 @@ def str_loop(length):
                 counter=0
             if update:
                 update = False
+                lcd.clear()
+                time.sleep(0.5)
                 break
     else:
         buf = string
@@ -63,13 +65,13 @@ def destroy():
 PCF8574_address = 0x27 #I2C address of PCF8574
 PCF8574A_address = 0x3F #I2C address of PCF8574A
 
+try:
+    mcp = PCF8574_GPIO(PCF8574_address)
+except:
     try:
-        mcp = PCF8574_GPIO(PCF8574_address)
+        mcp = PCF8574_GPIO(PCF8574A_address)
     except:
-        try:
-            mcp = PCF8574_GPIO(PCF8574A_address)
-        except:
-            print("I2C Address Error !")
-            exit(1)
+        print("I2C Address Error !")
+        exit(1)
 #create LCD, passing in MCP GPIO adapter
 lcd = Adafruit_CharLCD(pin_rs=0, pin_e=2, pins_db=[4,5,6,7], GPIO=mcp)

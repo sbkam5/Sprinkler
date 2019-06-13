@@ -45,6 +45,8 @@ def str_loop(l):
                 buf = string[0:15]
                 length = len(string)
                 update = False
+                lcd.clear()
+                time.sleep(0.5)
     else:
         buf = string
         lcd.message(title+'\n')
