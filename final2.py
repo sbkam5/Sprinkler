@@ -172,7 +172,7 @@ def loop():
 			string += " WaterSaved: " + str(waterSaved)
 		else:
 			string += " WaterLost: " + str(waterSaved)
-			
+
 		if ( ispassing ):
 			lcd_multithread.updateString("Someone is passing. Relay Shutoff")
 		else:
@@ -227,12 +227,10 @@ if __name__=='__main__':
 	"""
 
 	try:
-		x = threading.Thread(target=lcd_multithread.LCDprint,args=("Tom is stupid",))
-		x.daemon = True
+		x = threading.Thread(target=lcd_multithread.LCDprint,args=("Tom is stupid
 		x.start()
 		motion.setup()
-		y = threading.Thread(target = motion.loop, args=())
-		y.daemon = True
+		y = threading.Thread(target = motion.loop, args
 		y.start()
 		loop()
 	except KeyboardInterrupt:
