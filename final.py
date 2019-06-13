@@ -62,37 +62,55 @@ def Update( lTemp, lHumidity, lET ):
 	global cimisET
 	global savedWater
 	global waterSaved
+  global hours
 
 	averageTemp = lTemp / 60.0    #once update is called, average the locally collected data
 	averageHumidity = lHumidity / 60.0
 	averageET = lET/60.0
 	newNode = dataNode( 100, averageET, averageTemp, averageHumidity )
 	data.append(newNode)
-	found = 0 #This is a variable that turns to 1 once the first element of the date of interest is found.
 
-	print("Currently Updating\n")
+  #-----------------------------The part of the code that gets the cimis data 
+  xls_path = 'CIMIS_query.csv' # TODO: make this dep on stations/query date
+  month = int(datetime.today().strftime('%m'))
+	day   = int(datetime.today().strftime('%d'))
+	year  = int(datetime.today().strftime('%Y'))
+	currentdate  = str(month) + '-' + str(day) + '-' + str(year)
+	print currentdate
+
+  interval ='hourly' #options are:    default, daily, hourly
+  start = date #self-explanatory
+  end = currentdate #self-explanatory
+
+  site_names, cimis_data = run_query(appKey, sites, interval,
+                                       start=start, end=end)
+
+  csv = cimis_data[0].to_csv(index=False)
+  f = open(xls_path, "w+")
+  f.write(csv)
+  f.close()
+  #------------------------------End of cimis data code
+  
+ 	print("Currently Updating\n")
 	count = 0
 	sum = 0.0
 	tempTemp = 0.0
 	tempHumidity = 0
 	tempET = 0.0
 
-	with open("hourly075.csv", "rt") as file: #Open CVS CIMIS File
+	with open("CIMIS_query.csv", "rt") as file: #Open CVS CIMIS File
 		for line in file:
 			info = line.split(",")
-			if info[1] != date and found == 0:  #Skip through lines in file till you get to date of interest.  Once found, found = 1.
-				continue
-			else:
-				found = 1
+      if(info[0] == 'HlyAsceEto'):
+        continue
 
 			#stop reading the file either when we have caught up to the specified hours or when we have reaced end of CIMIS file
 			if count >= (hours+beginningHour) or info[4] == "--":
 				break
 
-			CimisTime     = int(info[2])
-			ETo      = float(info[4])
-			temp     = float(info[12])
-			humidity = int(info[14])
+			ETo      = float(info[9])
+			temp     = float(info[13])
+			humidity = int(info[1])
 			tempTemp = temp
 			tempHumidity = humidity
 			tempET = ETo
@@ -171,7 +189,7 @@ def loop():
 		sleep(3)
                 print "looping"
 		string = " localTemp: " + str(localTemp) + " Local Hum: " + str(localHum) + " LocalET: " + str(localET) + " CimisTemp: " + str(cimisTemp) + " CimisHum: " + str(cimisHum) + " CimisET: " + str(cimisET)
-		if(waterSaved):
+		if(SavedWater):
 			string += " WaterSaved: " + str(waterSaved)
 		else:
 			string += " WaterLost: " + str(waterSaved)
@@ -214,7 +232,7 @@ def loop():
 			month = int(datetime.today().strftime('%m'))
 			day   = int(datetime.today().strftime('%d'))
 			year  = int(datetime.today().strftime('%Y'))
-			date  = str(month) + '/' + str(day) + '/' + str(year)
+			date  = str(month) + '-' + str(day) + '-' + str(year)
 			print date
 			currentHour = int(datetime.today().strftime('%H'))
 			beginningHour = currentHour
